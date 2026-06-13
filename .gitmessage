@@ -1,0 +1,17 @@
+# <type>: <subject>
+# type: Feat, Fix, Docs, Config, Test, Chore, Refactor, Build, Ci
+# subject: 명령형, 첫 글자 대문자, 마침표 없음, 50글자 이내
+#
+# --- 본문(선택사항) ---
+# 변경 사항을 자세히 설명하세요.
+#
+# - add: 새로운 파일/기능/의존성 추가
+# - remove: 파일/기능/의존성 제거
+# - update: 기존 항목 수정/업데이트
+# - refactor: 코드 구조 개선 (동작 변경 없음)
+# - extract: 기존 코드에서 로직 추출
+# - move: 코드/파일 위치 이동
+# - rename: 이름 변경
+# - docs: 문서화 (주석, JavaDoc 등)
+# - deprecate: 기능 사용 중단 표시
+# - revert: 이전 상태로 되돌림
