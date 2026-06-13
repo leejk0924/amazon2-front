@@ -7,6 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Error logs (keep analysis, exclude raw logs)
+.claude/errors/logs/
+
 node_modules
 dist
 dist-ssr
