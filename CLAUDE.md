@@ -68,3 +68,38 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+
+---
+
+## 하네스: 프론트엔드 개발 자동화
+
+**목표:** React 컴포넌트 개발부터 검증까지 자동화하는 팀 기반 워크플로우
+
+**트리거:** 프론트엔드 개발 관련 요청이 들어오면 `frontend-harness` 스킬을 자동으로 사용합니다.
+
+- "컴포넌트 만들어줘"
+- "테스트 써줘"
+- "코드 개선해줘"
+- "품질 검사해줘"
+- "성능 분석해줘"
+
+**팀 구성:**
+
+- **Developer**: 컴포넌트 생성, 테스트 작성, 코드 편집 (Opus)
+- **QA**: 품질 검증, 성능 분석 (Opus)
+
+**에이전트/스킬 위치:**
+
+- 에이전트: `.claude/agents/developer.md`, `.claude/agents/qa.md`
+- 스킬: `.claude/skills/`
+  - `component-generator/` (Developer 전용)
+  - `test-writer/` (Developer 전용)
+  - `code-editor/` (Developer 전용)
+  - `quality-checker/` (QA 전용)
+  - `performance-analyzer/` (QA 전용)
+  - `frontend-harness/` (오케스트레이터)
+
+**변경 이력:**
+| 날짜 | 변경 내용 | 대상 | 사유 |
+|------|----------|------|------|
+| 2026-06-21 | 초기 구성 | 전체 | 프론트엔드 개발 자동화 하네스 구축 |
