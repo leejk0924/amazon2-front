@@ -1,25 +1,34 @@
 import { useState } from 'react';
-import { DAYS_KO } from '../utils';
 import '../styles/WeeklyDashboard.css';
 
-function CountBadge({ count }) {
+function CountBadge({ count, onClick }) {
   if (count === 0) {
-    return <span className="count-badge count-badge--empty">—</span>;
+    return (
+      <button
+        className="count-badge count-badge--empty"
+        onClick={onClick}
+        aria-label="포스팅 수 입력"
+      >
+        —
+      </button>
+    );
   }
 
   const intensity = Math.min(count, 5);
   const opacity = 0.15 + intensity * 0.17;
 
   return (
-    <span
-      className="count-badge"
+    <button
+      className="count-badge count-badge--interactive"
+      onClick={onClick}
       style={{
         background: `rgba(61, 214, 140, ${opacity})`,
         color: count >= 3 ? '#3DD68C' : '#5be8a4',
       }}
+      aria-label={`포스팅 수 ${count}개 - 클릭하여 수정`}
     >
       {count}
-    </span>
+    </button>
   );
 }
 
@@ -28,8 +37,13 @@ export function WeeklyDashboard({
   // eslint-disable-next-line no-unused-vars
   categories = [],
   weekDates = [],
+  daysKo = [],
   getCount = () => 0,
   formatDate = (d) => d.toISOString().slice(0, 10),
+  // eslint-disable-next-line no-unused-vars
+  today = new Date(),
+  error = null,
+  onCellClick = () => {},
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -135,7 +149,7 @@ export function WeeklyDashboard({
               {weekDates.map((date, i) => (
                 <th key={formatDate(date)} className="col-date">
                   <div className="date-header">
-                    <span className="day-name">{DAYS_KO[i]}</span>
+                    <span className="day-name">{daysKo[i]}</span>
                     <span className="date-num">{date.getDate()}</span>
                   </div>
                 </th>
@@ -162,11 +176,17 @@ export function WeeklyDashboard({
                       </a>
                     </div>
                   </td>
-                  {weekDates.map((date) => (
-                    <td key={`${member.id}-${formatDate(date)}`} className="col-date">
-                      <CountBadge count={getCount(member.id, formatDate(date))} />
-                    </td>
-                  ))}
+                  {weekDates.map((date) => {
+                    const dateStr = formatDate(date);
+                    return (
+                      <td key={`${member.id}-${dateStr}`} className="col-date">
+                        <CountBadge
+                          count={getCount(member.id, dateStr)}
+                          onClick={() => onCellClick(member.id, dateStr)}
+                        />
+                      </td>
+                    );
+                  })}
                   <td className="col-total">
                     <strong>{weeklyTotal(member.id)}</strong>
                   </td>
@@ -174,7 +194,18 @@ export function WeeklyDashboard({
               ))
             ) : (
               <tr className="empty-row">
-                <td colSpan={weekDates.length + 2}>표시할 데이터가 없습니다.</td>
+                <td colSpan={weekDates.length + 2}>
+                  <div>
+                    <p style={{ margin: '0 0 0.5rem 0' }}>표시할 데이터가 없습니다.</p>
+                    {error && (
+                      <p
+                        style={{ margin: 0, fontSize: '0.875rem', opacity: 0.7, color: '#ef4444' }}
+                      >
+                        데이터 로드 실패: {error}
+                      </p>
+                    )}
+                  </div>
+                </td>
               </tr>
             )}
             {/* 날짜별 합계 */}
