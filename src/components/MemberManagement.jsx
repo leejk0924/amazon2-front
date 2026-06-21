@@ -26,10 +26,14 @@ export function MemberManagement({
   const [removeConfirmMember, setRemoveConfirmMember] = useState(null);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [cCode, setCCode] = useState('');
   const [cName, setCName] = useState('');
+  const [cDesc, setCDesc] = useState('');
   const [removeConfirmCat, setRemoveConfirmCat] = useState(null);
   const [editingCat, setEditingCat] = useState(null);
+  const [editCatCode, setEditCatCode] = useState('');
   const [editCatName, setEditCatName] = useState('');
+  const [editCatDesc, setEditCatDesc] = useState('');
 
   const weeklyTotal = (memberId) =>
     weekDates.reduce((s, d) => s + getCount(memberId, formatDate(d)), 0);
@@ -53,20 +57,28 @@ export function MemberManagement({
   };
 
   const handleAddCategory = () => {
-    if (!cName.trim()) return;
-    onAddCategory({ id: Date.now().toString(), name: cName.trim() });
+    if (!cCode.trim() || !cName.trim()) return;
+    onAddCategory({
+      id: cCode.trim().toUpperCase(),
+      name: cName.trim(),
+      color: cDesc.trim(),
+    });
+    setCCode('');
     setCName('');
+    setCDesc('');
     setShowCategoryForm(false);
   };
 
   const startEditCat = (cat) => {
     setEditingCat(cat.id);
+    setEditCatCode(cat.id);
     setEditCatName(cat.name);
+    setEditCatDesc(cat.color || '');
   };
 
   const saveEditCat = (id) => {
     if (editCatName.trim()) {
-      onUpdateCategory(id, { name: editCatName.trim() });
+      onUpdateCategory(id, { name: editCatName.trim(), color: editCatDesc.trim() });
     }
     setEditingCat(null);
   };
@@ -224,12 +236,30 @@ export function MemberManagement({
           {showCategoryForm && (
             <div className="form-section">
               <div className="form-group">
+                <label>코드</label>
+                <input
+                  type="text"
+                  value={cCode}
+                  onChange={(e) => setCCode(e.target.value.toUpperCase())}
+                  placeholder="예: BEAUTY, FASHION, FOOD"
+                />
+              </div>
+              <div className="form-group">
                 <label>이름</label>
                 <input
                   type="text"
                   value={cName}
                   onChange={(e) => setCName(e.target.value)}
-                  placeholder="카테고리 이름"
+                  placeholder="예: 뷰티/패션"
+                />
+              </div>
+              <div className="form-group">
+                <label>설명</label>
+                <input
+                  type="text"
+                  value={cDesc}
+                  onChange={(e) => setCDesc(e.target.value)}
+                  placeholder="카테고리 설명"
                 />
               </div>
               <div className="form-actions">
@@ -249,11 +279,18 @@ export function MemberManagement({
                 <div key={cat.id} className="category-row">
                   {editingCat === cat.id ? (
                     <div className="category-edit">
+                      <input type="text" value={editCatCode} disabled placeholder="코드" />
                       <input
                         type="text"
                         value={editCatName}
                         onChange={(e) => setEditCatName(e.target.value)}
                         placeholder="카테고리 이름"
+                      />
+                      <input
+                        type="text"
+                        value={editCatDesc}
+                        onChange={(e) => setEditCatDesc(e.target.value)}
+                        placeholder="설명"
                       />
                       <div className="edit-buttons">
                         <button className="btn-confirm" onClick={() => saveEditCat(cat.id)}>
