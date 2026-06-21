@@ -44,12 +44,14 @@ export function WeeklyDashboard({
   today = new Date(),
   error = null,
   onCellClick = () => {},
+  onBatchExecute = () => {},
 }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [filterMode, setFilterMode] = useState(false);
   const [filterMax, setFilterMax] = useState(5);
   const [filterInput, setFilterInput] = useState('5');
+  const [batchLoading, setBatchLoading] = useState(false);
 
   // 주간 합계
   const weeklyTotal = (memberId) =>
@@ -90,11 +92,32 @@ export function WeeklyDashboard({
     setPage(1);
   };
 
+  // 배치 실행
+  const handleBatchExecute = async () => {
+    if (weekDates.length < 2) return;
+    setBatchLoading(true);
+    try {
+      await onBatchExecute(formatDate(weekDates[0]), formatDate(weekDates[6]));
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
   return (
     <div className="weekly-dashboard">
       {/* 헤더 */}
       <div className="dashboard-header">
         <div className="header-controls">
+          {/* 배치 데이터 수집 */}
+          <button
+            className="control-btn batch-btn"
+            onClick={handleBatchExecute}
+            disabled={batchLoading}
+            aria-label="배치 데이터 수집"
+          >
+            {batchLoading ? '⏳ 수집 중...' : '📊 데이터 수집'}
+          </button>
+
           {/* 필터 토글 */}
           <button
             className={`control-btn ${filterMode ? 'active' : ''}`}

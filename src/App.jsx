@@ -58,7 +58,13 @@ export function App() {
         // 현재 주의 포스팅 조회
         const todayForSeed = new Date();
         const seedWeek = getWeekDates(todayForSeed);
-        const postingsRes = await postingAPI.getWeekly(formatDate(seedWeek[0]));
+        const seedStartDate = formatDate(seedWeek[0]);
+
+        console.log(
+          `[초기 로드] 주간=${formatDate(seedWeek[0])} ~ ${formatDate(seedWeek[6])}, startDate=${seedStartDate}`
+        );
+
+        const postingsRes = await postingAPI.getWeekly(seedStartDate);
 
         if (postingsRes?.content) {
           const dailyPosts = convertWeeklyPostingsToDailyPosts(postingsRes.content, seedWeek[0]);
@@ -72,6 +78,36 @@ export function App() {
       }
     })();
   }, []);
+
+  // 주간 이동 시 포스팅 데이터 갱신
+  useEffect(() => {
+    (async () => {
+      try {
+        setError(null);
+        const referenceDate = new Date();
+        referenceDate.setDate(referenceDate.getDate() + weekOffset * 7);
+        const weekDatesForFetch = getWeekDates(referenceDate);
+        const startDateStr = formatDate(weekDatesForFetch[0]);
+
+        console.log(
+          `[주간 조회] weekOffset=${weekOffset}, 주간=${formatDate(weekDatesForFetch[0])} ~ ${formatDate(weekDatesForFetch[6])}, startDate=${startDateStr}`
+        );
+
+        const postingsRes = await postingAPI.getWeekly(startDateStr);
+
+        if (postingsRes?.content) {
+          const dailyPosts = convertWeeklyPostingsToDailyPosts(
+            postingsRes.content,
+            weekDatesForFetch[0]
+          );
+          setPosts(dailyPosts);
+        }
+      } catch (err) {
+        console.error('포스팅 데이터 조회 실패:', err);
+        setError(err.message);
+      }
+    })();
+  }, [weekOffset]);
 
   const today = new Date();
   const referenceDate = new Date();
@@ -287,6 +323,22 @@ export function App() {
               today={today}
               error={error}
               onCellClick={(memberId, date) => setPostModal({ open: true, memberId, date })}
+              onBatchExecute={async (startDate, endDate) => {
+                try {
+                  console.log(`[배치 실행] startDate=${startDate}, endDate=${endDate}`);
+                  await postingAPI.executeBatch(startDate, endDate);
+                  const postingsRes = await postingAPI.getWeekly(startDate);
+                  if (postingsRes?.content) {
+                    const dailyPosts = convertWeeklyPostingsToDailyPosts(
+                      postingsRes.content,
+                      new Date(startDate)
+                    );
+                    setPosts(dailyPosts);
+                  }
+                } catch (err) {
+                  console.error('배치 실행 실패:', err);
+                }
+              }}
             />
           </>
         )}
