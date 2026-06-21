@@ -1,5 +1,28 @@
 const API_BASE_URL = 'http://localhost:8080';
 
+// 에러 메시지 정제
+function formatErrorMessage(error) {
+  const message = error.message || error.toString();
+
+  // JDBC/SQL 에러
+  if (message.includes('JDBC') || message.includes('SQL')) {
+    return '데이터 조회 중 오류가 발생했습니다. 백엔드 서버를 확인해주세요.';
+  }
+
+  // 네트워크 에러
+  if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+    return '백엔드 서버에 연결할 수 없습니다.';
+  }
+
+  // CORS 에러
+  if (message.includes('CORS') || message.includes('cross-origin')) {
+    return '서버 연결 설정 오류입니다.';
+  }
+
+  // 기본 에러
+  return '데이터 로드에 실패했습니다.';
+}
+
 // 기본 fetch 래퍼
 async function apiCall(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -29,7 +52,7 @@ async function apiCall(endpoint, options = {}) {
     return await response.json();
   } catch (error) {
     console.error(`API 호출 실패: ${endpoint}`, error);
-    throw error;
+    throw new Error(formatErrorMessage(error), { cause: error });
   }
 }
 
