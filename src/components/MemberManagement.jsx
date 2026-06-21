@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CATEGORY_COLORS } from '../utils';
 import '../styles/MemberManagement.css';
 
 function CategoryBadge({ category }) {
@@ -36,11 +35,9 @@ export function MemberManagement({
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [cName, setCName] = useState('');
-  const [cColor, setCColor] = useState(CATEGORY_COLORS[0]);
   const [removeConfirmCat, setRemoveConfirmCat] = useState(null);
   const [editingCat, setEditingCat] = useState(null);
   const [editCatName, setEditCatName] = useState('');
-  const [editCatColor, setEditCatColor] = useState('');
 
   const weeklyTotal = (memberId) =>
     weekDates.reduce((s, d) => s + getCount(memberId, formatDate(d)), 0);
@@ -65,21 +62,19 @@ export function MemberManagement({
 
   const handleAddCategory = () => {
     if (!cName.trim()) return;
-    onAddCategory({ id: Date.now().toString(), name: cName.trim(), color: cColor });
+    onAddCategory({ id: Date.now().toString(), name: cName.trim(), color: '#3dd68c' });
     setCName('');
-    setCColor(CATEGORY_COLORS[0]);
     setShowCategoryForm(false);
   };
 
   const startEditCat = (cat) => {
     setEditingCat(cat.id);
     setEditCatName(cat.name);
-    setEditCatColor(cat.color);
   };
 
   const saveEditCat = (id) => {
     if (editCatName.trim()) {
-      onUpdateCategory(id, { name: editCatName.trim(), color: editCatColor });
+      onUpdateCategory(id, { name: editCatName.trim(), color: '#3dd68c' });
     }
     setEditingCat(null);
   };
@@ -245,10 +240,6 @@ export function MemberManagement({
                   placeholder="카테고리 이름"
                 />
               </div>
-              <div className="form-group">
-                <label>색상</label>
-                <input type="color" value={cColor} onChange={(e) => setCColor(e.target.value)} />
-              </div>
               <div className="form-actions">
                 <button className="btn-primary" onClick={handleAddCategory}>
                   추가
@@ -271,11 +262,6 @@ export function MemberManagement({
                         value={editCatName}
                         onChange={(e) => setEditCatName(e.target.value)}
                         placeholder="카테고리 이름"
-                      />
-                      <input
-                        type="color"
-                        value={editCatColor}
-                        onChange={(e) => setEditCatColor(e.target.value)}
                       />
                       <div className="edit-buttons">
                         <button className="btn-confirm" onClick={() => saveEditCat(cat.id)}>
