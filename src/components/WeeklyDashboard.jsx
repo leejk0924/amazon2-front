@@ -160,21 +160,16 @@ export function WeeklyDashboard({
           <tbody>
             {pagedMembers.length > 0 ? (
               pagedMembers.map((member) => (
-                <tr key={member.id} className="member-row">
+                <tr key={member.id}>
                   <td className="col-member">
-                    <div className="member-info">
-                      {member.avatar && (
-                        <img src={member.avatar} alt={member.name} className="member-avatar" />
-                      )}
-                      <a
-                        href={member.blogUrl || '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="member-name"
-                      >
-                        {member.name}
-                      </a>
-                    </div>
+                    <a
+                      href={member.blogUrl || '#'}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="member-name"
+                    >
+                      {member.name}
+                    </a>
                   </td>
                   {weekDates.map((date) => {
                     const dateStr = formatDate(date);

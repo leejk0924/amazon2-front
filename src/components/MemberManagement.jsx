@@ -21,8 +21,10 @@ export function MemberManagement({
 }) {
   const [subTab, setSubTab] = useState('members');
   const [showMemberForm, setShowMemberForm] = useState(false);
+  const [mNickname, setMNickname] = useState('');
   const [mName, setMName] = useState('');
   const [mCategoryId, setMCategoryId] = useState('');
+  const [categoryError, setCategoryError] = useState(false);
   const [removeConfirmMember, setRemoveConfirmMember] = useState(null);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
@@ -42,17 +44,24 @@ export function MemberManagement({
     weekDates.filter((d) => getCount(memberId, formatDate(d)) > 0).length;
 
   const handleAddMember = () => {
-    if (!mName.trim()) return;
-    const initials = mName.trim().slice(0, 2).toUpperCase();
+    if (!mNickname.trim() || !mName.trim() || !mCategoryId.trim()) {
+      setCategoryError(!mCategoryId.trim());
+      return;
+    }
+    setCategoryError(false);
+    const initials = mNickname.trim().slice(0, 2).toUpperCase();
     onAddMember({
       id: Date.now().toString(),
+      nickname: mNickname.trim(),
       name: mName.trim(),
-      blogUrl: `blog.naver.com/${mName.trim()}`,
+      blogUrl: `blog.naver.com/${mNickname.trim()}`,
       avatar: initials,
       categoryId: mCategoryId,
     });
+    setMNickname('');
     setMName('');
     setMCategoryId('');
+    setCategoryError(false);
     setShowMemberForm(false);
   };
 
@@ -114,6 +123,15 @@ export function MemberManagement({
           {showMemberForm && (
             <div className="form-section">
               <div className="form-group">
+                <label>닉네임</label>
+                <input
+                  type="text"
+                  value={mNickname}
+                  onChange={(e) => setMNickname(e.target.value)}
+                  placeholder="멤버 닉네임"
+                />
+              </div>
+              <div className="form-group">
                 <label>이름</label>
                 <input
                   type="text"
@@ -123,15 +141,33 @@ export function MemberManagement({
                 />
               </div>
               <div className="form-group">
-                <label>카테고리</label>
-                <select value={mCategoryId} onChange={(e) => setMCategoryId(e.target.value)}>
-                  <option value="">선택 안 함</option>
+                <label>카테고리 *</label>
+                <select
+                  value={mCategoryId}
+                  onChange={(e) => {
+                    setMCategoryId(e.target.value);
+                    setCategoryError(false);
+                  }}
+                  style={categoryError ? { borderColor: '#ef4444' } : {}}
+                >
+                  <option value="">카테고리를 선택해주세요</option>
                   {categories.map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name}
                     </option>
                   ))}
                 </select>
+                {categoryError && (
+                  <p
+                    style={{
+                      fontSize: '0.875rem',
+                      color: '#ef4444',
+                      margin: '0.25rem 0 0 0',
+                    }}
+                  >
+                    카테고리를 선택해주세요
+                  </p>
+                )}
               </div>
               <div className="form-actions">
                 <button className="btn-primary" onClick={handleAddMember}>
@@ -149,7 +185,6 @@ export function MemberManagement({
               {members.map((member) => (
                 <div key={member.id} className="member-row">
                   <div className="member-info">
-                    <div className="member-avatar">{member.avatar}</div>
                     <div className="member-details">
                       <a
                         href={`https://${member.blogUrl}`}
@@ -158,6 +193,7 @@ export function MemberManagement({
                       >
                         {member.name}
                       </a>
+                      <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{member.nickname}</div>
                       {member.categoryId && (
                         <CategoryBadge
                           category={categories.find((c) => c.id === member.categoryId)}

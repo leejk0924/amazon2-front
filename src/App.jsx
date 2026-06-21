@@ -40,15 +40,16 @@ export function App() {
         // 응답 형식 정리
         const membersList = (membersRes?.content || []).map((m, idx) => ({
           id: String(m.id || idx + 1),
-          name: m.nickname || `멤버${idx + 1}`,
+          nickname: m.nickname || `멤버${idx + 1}`,
+          name: m.name || '',
           blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
           avatar: m.nickname?.substring(0, 2).toUpperCase() || 'N/A',
           categoryId: m.categoryCode || '',
         }));
 
         const categoriesList = (categoriesRes?.content || []).map((c) => ({
-          id: c.code || '',
-          name: c.name || '',
+          id: c.categoryCode || '',
+          name: c.categoryName || '',
         }));
 
         setMembers(membersList);
@@ -106,7 +107,7 @@ export function App() {
   // 멤버 추가
   const handleAddMember = async (m) => {
     try {
-      await memberAPI.create(m.name, m.categoryId);
+      await memberAPI.create(m.nickname, m.name, m.categoryId);
       setMembers((prev) => [...prev, m]);
     } catch (err) {
       console.error('멤버 추가 실패:', err);
@@ -127,7 +128,7 @@ export function App() {
   // 카테고리 추가
   const handleAddCategory = async (c) => {
     try {
-      await categoryAPI.create(c.id, c.name);
+      await categoryAPI.create(c.id, c.name, c.color);
       setCategories((prev) => [...prev, c]);
     } catch (err) {
       console.error('카테고리 추가 실패:', err);
@@ -149,7 +150,9 @@ export function App() {
   const handleUpdateCategory = async (id, updates) => {
     try {
       await categoryAPI.update(id, updates.name, updates.color);
-      setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, ...updates } : c)));
+      setCategories((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, name: updates.name, color: updates.color } : c))
+      );
     } catch (err) {
       console.error('카테고리 수정 실패:', err);
     }

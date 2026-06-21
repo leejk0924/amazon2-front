@@ -69,10 +69,10 @@ export const memberAPI = {
   },
 
   // 멤버 생성
-  create: async (nickname, categoryCode) => {
+  create: async (nickname, name, categoryCode) => {
     return apiCall('/members', {
       method: 'POST',
-      body: JSON.stringify({ nickname, categoryCode }),
+      body: JSON.stringify({ nickname, name, categoryCode }),
     });
   },
 
