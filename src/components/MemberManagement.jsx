@@ -31,7 +31,6 @@ export function MemberManagement({
   const [subTab, setSubTab] = useState('members');
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [mName, setMName] = useState('');
-  const [mBlogUrl, setMBlogUrl] = useState('');
   const [mCategoryId, setMCategoryId] = useState('');
   const [removeConfirmMember, setRemoveConfirmMember] = useState(null);
 
@@ -55,12 +54,11 @@ export function MemberManagement({
     onAddMember({
       id: Date.now().toString(),
       name: mName.trim(),
-      blogUrl: mBlogUrl.trim() || `blog.naver.com/${mName.trim()}`,
+      blogUrl: `blog.naver.com/${mName.trim()}`,
       avatar: initials,
       categoryId: mCategoryId,
     });
     setMName('');
-    setMBlogUrl('');
     setMCategoryId('');
     setShowMemberForm(false);
   };
@@ -123,15 +121,6 @@ export function MemberManagement({
                   value={mName}
                   onChange={(e) => setMName(e.target.value)}
                   placeholder="멤버 이름"
-                />
-              </div>
-              <div className="form-group">
-                <label>블로그 URL</label>
-                <input
-                  type="text"
-                  value={mBlogUrl}
-                  onChange={(e) => setMBlogUrl(e.target.value)}
-                  placeholder="blog.naver.com/..."
                 />
               </div>
               <div className="form-group">
