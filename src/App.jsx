@@ -49,7 +49,6 @@ export function App() {
         const categoriesList = (categoriesRes?.content || []).map((c) => ({
           id: c.code || '',
           name: c.name || '',
-          color: c.description || '#3dd68c',
         }));
 
         setMembers(membersList);

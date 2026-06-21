@@ -3,15 +3,7 @@ import '../styles/MemberManagement.css';
 
 function CategoryBadge({ category }) {
   if (!category) return null;
-  return (
-    <span
-      className="category-badge"
-      style={{ background: category.color + '22', color: category.color }}
-    >
-      <span className="category-badge-dot" style={{ background: category.color }} />
-      {category.name}
-    </span>
-  );
+  return <span className="category-badge">{category.name}</span>;
 }
 
 export function MemberManagement({
@@ -62,7 +54,7 @@ export function MemberManagement({
 
   const handleAddCategory = () => {
     if (!cName.trim()) return;
-    onAddCategory({ id: Date.now().toString(), name: cName.trim(), color: '#3dd68c' });
+    onAddCategory({ id: Date.now().toString(), name: cName.trim() });
     setCName('');
     setShowCategoryForm(false);
   };
@@ -74,7 +66,7 @@ export function MemberManagement({
 
   const saveEditCat = (id) => {
     if (editCatName.trim()) {
-      onUpdateCategory(id, { name: editCatName.trim(), color: '#3dd68c' });
+      onUpdateCategory(id, { name: editCatName.trim() });
     }
     setEditingCat(null);
   };
