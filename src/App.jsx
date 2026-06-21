@@ -183,43 +183,6 @@ export function App() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="app">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100vh',
-          }}
-        >
-          <div style={{ textAlign: 'center' }}>
-            <h2 style={{ color: '#ef4444', marginBottom: '1rem' }}>데이터 로드 실패</h2>
-            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>{error}</p>
-            <p style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-              백엔드 서버(http://localhost:8080)가 실행 중인지 확인해주세요.
-            </p>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                marginTop: '1.5rem',
-                padding: '0.5rem 1rem',
-                background: '#3dd68c',
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-              }}
-            >
-              다시 시도
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="app">
       {/* 헤더 */}
@@ -259,6 +222,24 @@ export function App() {
       <main className="app-content">
         {tab === 'dashboard' && (
           <>
+            {error && (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem',
+                  background: '#fee2e2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '0.5rem',
+                  color: '#991b1b',
+                }}
+              >
+                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600' }}>데이터 로드 실패</p>
+                <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem' }}>{error}</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
+                  백엔드 서버(http://localhost:8080)가 실행 중인지 확인해주세요.
+                </p>
+              </div>
+            )}
             {/* 통계 */}
             <div className="stats-grid">
               <div className="stat-card">
@@ -326,18 +307,38 @@ export function App() {
         )}
 
         {tab === 'members' && (
-          <MemberManagement
-            members={members}
-            categories={categories}
-            weekDates={weekDates}
-            getCount={getCount}
-            formatDate={formatDate}
-            onAddMember={(m) => handleAddMember(m)}
-            onRemoveMember={(id) => handleRemoveMember(id)}
-            onAddCategory={(c) => handleAddCategory(c)}
-            onRemoveCategory={(id) => handleRemoveCategory(id)}
-            onUpdateCategory={(id, updates) => handleUpdateCategory(id, updates)}
-          />
+          <>
+            {error && (
+              <div
+                style={{
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem',
+                  background: '#fee2e2',
+                  border: '1px solid #fca5a5',
+                  borderRadius: '0.5rem',
+                  color: '#991b1b',
+                }}
+              >
+                <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600' }}>데이터 로드 실패</p>
+                <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.875rem' }}>{error}</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.8 }}>
+                  백엔드 서버(http://localhost:8080)가 실행 중인지 확인해주세요.
+                </p>
+              </div>
+            )}
+            <MemberManagement
+              members={members}
+              categories={categories}
+              weekDates={weekDates}
+              getCount={getCount}
+              formatDate={formatDate}
+              onAddMember={(m) => handleAddMember(m)}
+              onRemoveMember={(id) => handleRemoveMember(id)}
+              onAddCategory={(c) => handleAddCategory(c)}
+              onRemoveCategory={(id) => handleRemoveCategory(id)}
+              onUpdateCategory={(id, updates) => handleUpdateCategory(id, updates)}
+            />
+          </>
         )}
       </main>
 
