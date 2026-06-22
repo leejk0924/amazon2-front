@@ -92,7 +92,11 @@ export function MemberManagement({
     setEditingCat(null);
   };
 
-  const memberCountByCat = (catId) => members.filter((m) => m.categoryId === catId).length;
+  const memberCountByCat = (catId) => {
+    const count = members.filter((m) => m.categoryId === catId).length;
+    console.log(`[카테고리별 인원] catId=${catId}, count=${count}, members=`, members);
+    return count;
+  };
 
   return (
     <div className="member-management">
@@ -194,11 +198,14 @@ export function MemberManagement({
                         {member.name}
                       </a>
                       <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{member.nickname}</div>
-                      {member.categoryId && (
-                        <CategoryBadge
-                          category={categories.find((c) => c.id === member.categoryId)}
-                        />
-                      )}
+                      <CategoryBadge
+                        category={
+                          categories.find((c) => c.id === member.categoryId) || {
+                            id: '',
+                            name: '미분류',
+                          }
+                        }
+                      />
                     </div>
                   </div>
                   <div className="member-stats">

@@ -52,6 +52,8 @@ export function App() {
           name: c.categoryName || '',
         }));
 
+        console.log('[멤버 데이터]', membersList);
+        console.log('[카테고리 데이터]', categoriesList);
         setMembers(membersList);
         setCategories(categoriesList);
 
@@ -108,6 +110,54 @@ export function App() {
       }
     })();
   }, [weekOffset]);
+
+  // 탭 전환 시 데이터 갱신
+  useEffect(() => {
+    (async () => {
+      try {
+        if (tab === 'dashboard') {
+          console.log('[탭 전환] 대시보드 탭 - 포스팅 데이터 갱신');
+          const referenceDate = new Date();
+          referenceDate.setDate(referenceDate.getDate() + weekOffset * 7);
+          const weekDatesForFetch = getWeekDates(referenceDate);
+          const postingsRes = await postingAPI.getWeekly(formatDate(weekDatesForFetch[0]));
+
+          if (postingsRes?.content) {
+            const dailyPosts = convertWeeklyPostingsToDailyPosts(
+              postingsRes.content,
+              weekDatesForFetch[0]
+            );
+            setPosts(dailyPosts);
+          }
+        } else if (tab === 'members') {
+          console.log('[탭 전환] 인원 관리 탭 - 멤버/카테고리 데이터 갱신');
+          const [membersRes, categoriesRes] = await Promise.all([
+            memberAPI.getAll(),
+            categoryAPI.getAll(),
+          ]);
+
+          const membersList = (membersRes?.content || []).map((m, idx) => ({
+            id: String(m.id || idx + 1),
+            nickname: m.nickname || `멤버${idx + 1}`,
+            name: m.name || '',
+            blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
+            avatar: m.nickname?.substring(0, 2).toUpperCase() || 'N/A',
+            categoryId: m.categoryCode || '',
+          }));
+
+          const categoriesList = (categoriesRes?.content || []).map((c) => ({
+            id: c.categoryCode || '',
+            name: c.categoryName || '',
+          }));
+
+          setMembers(membersList);
+          setCategories(categoriesList);
+        }
+      } catch (err) {
+        console.error('탭 전환 시 데이터 갱신 실패:', err);
+      }
+    })();
+  }, [tab, weekOffset]);
 
   const today = new Date();
   const referenceDate = new Date();
