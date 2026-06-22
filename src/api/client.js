@@ -168,14 +168,12 @@ export function convertWeeklyPostingsToDailyPosts(apiPostings, startDate) {
 
   apiPostings.forEach((posting) => {
     DAYS.forEach((day, index) => {
-      const count = posting[day];
-      if (count > 0) {
-        posts.push({
-          memberId: String(posting.memberId),
-          date: formatDate(week[index]),
-          count,
-        });
-      }
+      const count = posting[day] || 0;
+      posts.push({
+        memberId: String(posting.memberId),
+        date: formatDate(week[index]),
+        count,
+      });
     });
   });
 

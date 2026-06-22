@@ -68,8 +68,10 @@ export function App() {
 
         const postingsRes = await postingAPI.getWeekly(seedStartDate);
 
+        console.log('[포스팅 API 응답]', postingsRes);
         if (postingsRes?.content) {
           const dailyPosts = convertWeeklyPostingsToDailyPosts(postingsRes.content, seedWeek[0]);
+          console.log('[변환 후 포스팅 데이터]', dailyPosts);
           setPosts(dailyPosts);
         }
       } catch (err) {
@@ -97,11 +99,13 @@ export function App() {
 
         const postingsRes = await postingAPI.getWeekly(startDateStr);
 
+        console.log('[주간 포스팅 응답]', postingsRes);
         if (postingsRes?.content) {
           const dailyPosts = convertWeeklyPostingsToDailyPosts(
             postingsRes.content,
             weekDatesForFetch[0]
           );
+          console.log('[변환 후 포스팅]', dailyPosts);
           setPosts(dailyPosts);
         }
       } catch (err) {
@@ -122,11 +126,13 @@ export function App() {
           const weekDatesForFetch = getWeekDates(referenceDate);
           const postingsRes = await postingAPI.getWeekly(formatDate(weekDatesForFetch[0]));
 
+          console.log('[탭 전환 포스팅 응답]', postingsRes);
           if (postingsRes?.content) {
             const dailyPosts = convertWeeklyPostingsToDailyPosts(
               postingsRes.content,
               weekDatesForFetch[0]
             );
+            console.log('[탭 전환 변환 후]', dailyPosts);
             setPosts(dailyPosts);
           }
         } else if (tab === 'members') {
