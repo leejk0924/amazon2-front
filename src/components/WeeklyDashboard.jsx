@@ -9,7 +9,7 @@ function CountBadge({ count, onClick }) {
         onClick={onClick}
         aria-label="포스팅 수 입력"
       >
-        —
+        0
       </button>
     );
   }

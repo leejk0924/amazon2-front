@@ -178,7 +178,14 @@ export function App() {
 
   const getCount = (memberId, date) => {
     const entry = posts.find((p) => p.memberId === memberId && p.date === date);
-    return entry ? entry.count : 0;
+    const result = entry ? entry.count : 0;
+    if (posts.length > 0 && memberId === posts[0]?.memberId) {
+      console.log(
+        `[getCount] memberId=${memberId}, date=${date}, found=${!!entry}, count=${result}, posts=`,
+        posts
+      );
+    }
+    return result;
   };
 
   const handleSavePost = (memberId, date, count) => {
