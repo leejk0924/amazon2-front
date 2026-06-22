@@ -39,7 +39,7 @@ export function App() {
 
         // 응답 형식 정리
         const membersList = (membersRes?.content || []).map((m, idx) => ({
-          id: String(m.id || idx + 1),
+          id: String(m.id),
           nickname: m.nickname || `멤버${idx + 1}`,
           name: m.name || '',
           blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
@@ -137,7 +137,7 @@ export function App() {
           ]);
 
           const membersList = (membersRes?.content || []).map((m, idx) => ({
-            id: String(m.id || idx + 1),
+            id: String(m.id),
             nickname: m.nickname || `멤버${idx + 1}`,
             name: m.name || '',
             blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
