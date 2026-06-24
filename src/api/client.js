@@ -59,8 +59,10 @@ async function apiCall(endpoint, options = {}) {
 // ===== 멤버 API =====
 export const memberAPI = {
   // 멤버 목록 조회
-  getAll: async (page = 0, size = 100) => {
-    return apiCall(`/members?page=${page}&size=${size}`);
+  getAll: async (page = 0, size, status) => {
+    const sizeParam = size ? `&size=${size}` : '';
+    const statusParam = status ? `&status=${status}` : '';
+    return apiCall(`/members?page=${page}${sizeParam}${statusParam}`);
   },
 
   // 멤버 상세 조회
@@ -84,10 +86,24 @@ export const memberAPI = {
     });
   },
 
-  // 멤버 삭제
+  // 멤버 삭제 (soft delete)
   delete: async (id) => {
     return apiCall(`/members/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  // 멤버 영구 삭제
+  permanentDelete: async (nickname) => {
+    return apiCall(`/members/${nickname}/permanent`, {
+      method: 'DELETE',
+    });
+  },
+
+  // 삭제된 멤버 복원
+  restore: async (nickname) => {
+    return apiCall(`/members/${nickname}/restore`, {
+      method: 'PATCH',
     });
   },
 };
@@ -131,9 +147,12 @@ export const categoryAPI = {
 // ===== 포스팅 API =====
 export const postingAPI = {
   // 주간 포스팅 조회
-  getWeekly: async (startDate) => {
+  getWeekly: async (startDate, pageSize, page) => {
     const dateStr = typeof startDate === 'string' ? startDate : formatDate(startDate);
-    return apiCall(`/postings?startDate=${dateStr}`);
+    let url = `/postings?startDate=${dateStr}`;
+    if (pageSize !== undefined) url += `&size=${pageSize}`;
+    if (page !== undefined) url += `&page=${page}`;
+    return apiCall(url);
   },
 
   // 배치 작업 실행
@@ -142,6 +161,11 @@ export const postingAPI = {
       method: 'POST',
       body: JSON.stringify({ startDate, endDate }),
     });
+  },
+
+  // 주간 통계 조회
+  getWeeklyStatistics: async (weekStartDate) => {
+    return apiCall(`/api/postings/weekly-statistics?weekStartDate=${weekStartDate}`);
   },
 };
 
@@ -170,7 +194,7 @@ export function convertWeeklyPostingsToDailyPosts(apiPostings, startDate) {
     DAYS.forEach((day, index) => {
       const count = posting[day] || 0;
       posts.push({
-        memberId: String(posting.memberId),
+        memberId: posting.memberNickname,
         date: formatDate(week[index]),
         count,
       });
