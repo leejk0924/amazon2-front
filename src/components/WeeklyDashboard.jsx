@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '../styles/WeeklyDashboard.css';
 
 function CountBadge({ count, onClick }) {
@@ -23,7 +23,7 @@ function CountBadge({ count, onClick }) {
       onClick={onClick}
       style={{
         background: `rgba(61, 214, 140, ${opacity})`,
-        color: count >= 3 ? '#3DD68C' : '#5be8a4',
+        color: intensity >= 3 ? '#ffffff' : '#047857',
       }}
       aria-label={`포스팅 수 ${count}개 - 클릭하여 수정`}
     >
@@ -43,33 +43,49 @@ export function WeeklyDashboard({
   // eslint-disable-next-line no-unused-vars
   today = new Date(),
   error = null,
+  weekOffset = 0,
+  totalPages = 1,
+  batchLoading = false,
+  onPageSizeChange = () => {},
+  onPageChange = () => {},
   onCellClick = () => {},
   onBatchExecute = () => {},
 }) {
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(100);
   const [filterMode, setFilterMode] = useState(false);
   const [filterMax, setFilterMax] = useState(5);
   const [filterInput, setFilterInput] = useState('5');
-  const [batchLoading, setBatchLoading] = useState(false);
+
+  // weekOffset 변경 시 page 리셋
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    setPage(1);
+    onPageChange(0);
+  }, [weekOffset, onPageChange]);
 
   // 주간 합계
   const weeklyTotal = (memberId) =>
     weekDates.reduce((sum, date) => sum + getCount(memberId, formatDate(date)), 0);
-
-  // 날짜별 합계
-  const dayTotal = (dateStr) =>
-    members.reduce((sum, member) => sum + getCount(member.id, dateStr), 0);
 
   // 필터 적용
   const filteredMembers = filterMode
     ? members.filter((m) => weeklyTotal(m.id) < filterMax)
     : members;
 
+  // 날짜별 합계 (필터 적용 시에는 필터링된 멤버들만 포함)
+  const dayTotal = (dateStr) =>
+    filteredMembers.reduce((sum, member) => sum + getCount(member.id, dateStr), 0);
+
   // 페이지네이션
-  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const pagedMembers = filteredMembers.slice((safePage - 1) * pageSize, safePage * pageSize);
+  // filterMode 없을 때는 API의 pagination 사용 (이미 페이징된 데이터)
+  // filterMode 있을 때는 로컬 pagination 사용
+  const localTotalPages = Math.max(1, Math.ceil(filteredMembers.length / pageSize));
+  const apiTotalPages = filterMode ? localTotalPages : totalPages;
+  const safePage = Math.min(page, apiTotalPages);
+  const pagedMembers = filterMode
+    ? filteredMembers.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : filteredMembers; // API에서 이미 페이징된 데이터이므로 전체 사용
 
   // 필터 적용
   const applyFilter = () => {
@@ -90,17 +106,14 @@ export function WeeklyDashboard({
   const handlePageSize = (size) => {
     setPageSize(size);
     setPage(1);
+    onPageSizeChange(size);
+    onPageChange(0);
   };
 
   // 배치 실행
   const handleBatchExecute = async () => {
     if (weekDates.length < 2) return;
-    setBatchLoading(true);
-    try {
-      await onBatchExecute(formatDate(weekDates[0]), formatDate(weekDates[6]));
-    } finally {
-      setBatchLoading(false);
-    }
+    await onBatchExecute(formatDate(weekDates[0]), formatDate(weekDates[6]));
   };
 
   return (
@@ -251,19 +264,27 @@ export function WeeklyDashboard({
         <div className="dashboard-footer">
           <div className="pagination">
             <button
-              disabled={safePage === 1}
-              onClick={() => setPage(Math.max(1, safePage - 1))}
+              disabled={safePage <= 1}
+              onClick={() => {
+                const newPage = Math.max(1, safePage - 1);
+                setPage(newPage);
+                onPageChange(newPage - 1);
+              }}
               className="pagination-btn"
               aria-label="이전 페이지"
             >
               ← 이전
             </button>
             <span className="pagination-info">
-              {safePage} / {totalPages} 페이지
+              {safePage} / {apiTotalPages} 페이지
             </span>
             <button
-              disabled={safePage === totalPages}
-              onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+              disabled={safePage === apiTotalPages}
+              onClick={() => {
+                const newPage = Math.min(totalPages, safePage + 1);
+                setPage(newPage);
+                onPageChange(newPage - 1);
+              }}
               className="pagination-btn"
               aria-label="다음 페이지"
             >

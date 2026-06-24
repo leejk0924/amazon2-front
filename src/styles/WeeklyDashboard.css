@@ -198,17 +198,18 @@
 }
 
 .member-name {
-  color: #2563eb;
+  color: #1e40af;
   text-decoration: none;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 600;
+  white-space: normal;
+  word-break: break-word;
+  transition: all 0.2s ease;
+  display: inline;
 }
 
 .member-name:hover {
+  color: #1e3a8a;
   text-decoration: underline;
-  color: #1e40af;
 }
 
 /* 날짜 헤더 */
@@ -288,12 +289,12 @@
 /* 푸터 */
 .dashboard-footer {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
-  flex-wrap: wrap;
 }
 
 .pagination {
