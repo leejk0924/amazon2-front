@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getWeekDates, formatDate } from './utils';
 import { WeeklyDashboard } from './components/WeeklyDashboard';
 import { MemberManagement } from './components/MemberManagement';
-import { PostModal } from './components/PostModal';
 import {
   memberAPI,
   categoryAPI,
@@ -18,11 +17,25 @@ export function App() {
   const [tab, setTab] = useState('dashboard');
   const [categories, setCategories] = useState([]);
   const [members, setMembers] = useState([]);
+  const [dashboardMembers, setDashboardMembers] = useState([]);
   const [posts, setPosts] = useState([]);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [postModal, setPostModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pageSize, setPageSize] = useState(100);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [weeklyStats, setWeeklyStats] = useState({
+    totalPostingCount: 0,
+    activeMemberCount: 0,
+    totalMemberCount: 0,
+    averagePostingPerActiveMember: 0,
+  });
+
+  // 탭/주간 변경 감지용
+  const prevTabRef = useRef();
+  const prevWeekOffsetRef = useRef();
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -31,48 +44,64 @@ export function App() {
         setLoading(true);
         setError(null);
 
-        // 멤버, 카테고리 동시 로드
+        // 멤버(모두), 카테고리 동시 로드
         const [membersRes, categoriesRes] = await Promise.all([
-          memberAPI.getAll(),
+          memberAPI.getAll(0, 1000),
           categoryAPI.getAll(),
         ]);
 
         // 응답 형식 정리
         const membersList = (membersRes?.content || []).map((m, idx) => ({
-          id: String(m.id),
+          id: m.nickname,
           nickname: m.nickname || `멤버${idx + 1}`,
           name: m.name || '',
           blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
           avatar: m.nickname?.substring(0, 2).toUpperCase() || 'N/A',
           categoryId: m.categoryCode || '',
+          status: m.status || 'active',
         }));
 
         const categoriesList = (categoriesRes?.content || []).map((c) => ({
           id: c.categoryCode || '',
           name: c.categoryName || '',
+          description: c.description || '',
         }));
 
-        console.log('[멤버 데이터]', membersList);
-        console.log('[카테고리 데이터]', categoriesList);
         setMembers(membersList);
+        setDashboardMembers(membersList);
         setCategories(categoriesList);
 
-        // 현재 주의 포스팅 조회
+        // 통계용 데이터: 현재 주의 전체 포스팅
         const todayForSeed = new Date();
         const seedWeek = getWeekDates(todayForSeed);
         const seedStartDate = formatDate(seedWeek[0]);
 
-        console.log(
-          `[초기 로드] 주간=${formatDate(seedWeek[0])} ~ ${formatDate(seedWeek[6])}, startDate=${seedStartDate}`
-        );
+        const postingsRes = await postingAPI.getWeekly(seedStartDate, pageSize, 0);
 
-        const postingsRes = await postingAPI.getWeekly(seedStartDate);
-
-        console.log('[포스팅 API 응답]', postingsRes);
         if (postingsRes?.content) {
           const dailyPosts = convertWeeklyPostingsToDailyPosts(postingsRes.content, seedWeek[0]);
-          console.log('[변환 후 포스팅 데이터]', dailyPosts);
           setPosts(dailyPosts);
+
+          // 테이블용 데이터: 첫 페이지 멤버 추출
+          const uniqueMembers = {};
+          postingsRes.content.forEach((posting) => {
+            if (!uniqueMembers[posting.memberNickname]) {
+              uniqueMembers[posting.memberNickname] = {
+                id: posting.memberNickname,
+                nickname: posting.memberNickname,
+                name: posting.memberName || '',
+                blogUrl: `https://blog.naver.com/${posting.memberNickname}`,
+                avatar: posting.memberNickname?.substring(0, 2).toUpperCase() || 'N/A',
+                categoryId: '',
+                status: 'active',
+              };
+            }
+          });
+          setDashboardMembers(Object.values(uniqueMembers));
+
+          // 전체 데이터 기반 totalPages 계산
+          const calculatedTotalPages = Math.ceil(Object.keys(uniqueMembers).length / pageSize);
+          setTotalPages(calculatedTotalPages);
         }
       } catch (err) {
         console.error('데이터 로드 실패:', err);
@@ -83,77 +112,118 @@ export function App() {
     })();
   }, []);
 
-  // 주간 이동 시 포스팅 데이터 갱신
+  // 주간 통계 조회
   useEffect(() => {
-    (async () => {
-      try {
-        setError(null);
-        const referenceDate = new Date();
-        referenceDate.setDate(referenceDate.getDate() + weekOffset * 7);
-        const weekDatesForFetch = getWeekDates(referenceDate);
-        const startDateStr = formatDate(weekDatesForFetch[0]);
-
-        console.log(
-          `[주간 조회] weekOffset=${weekOffset}, 주간=${formatDate(weekDatesForFetch[0])} ~ ${formatDate(weekDatesForFetch[6])}, startDate=${startDateStr}`
-        );
-
-        const postingsRes = await postingAPI.getWeekly(startDateStr);
-
-        console.log('[주간 포스팅 응답]', postingsRes);
-        if (postingsRes?.content) {
-          const dailyPosts = convertWeeklyPostingsToDailyPosts(
-            postingsRes.content,
-            weekDatesForFetch[0]
-          );
-          console.log('[변환 후 포스팅]', dailyPosts);
-          setPosts(dailyPosts);
-        }
-      } catch (err) {
-        console.error('포스팅 데이터 조회 실패:', err);
-        setError(err.message);
-      }
-    })();
-  }, [weekOffset]);
-
-  // 탭 전환 시 데이터 갱신
-  useEffect(() => {
-    (async () => {
-      try {
-        if (tab === 'dashboard') {
-          console.log('[탭 전환] 대시보드 탭 - 포스팅 데이터 갱신');
+    if (tab === 'dashboard') {
+      (async () => {
+        try {
           const referenceDate = new Date();
           referenceDate.setDate(referenceDate.getDate() + weekOffset * 7);
           const weekDatesForFetch = getWeekDates(referenceDate);
-          const postingsRes = await postingAPI.getWeekly(formatDate(weekDatesForFetch[0]));
+          const startDateStr = formatDate(weekDatesForFetch[0]);
 
-          console.log('[탭 전환 포스팅 응답]', postingsRes);
+          const statsRes = await postingAPI.getWeeklyStatistics(startDateStr);
+          if (statsRes) {
+            setWeeklyStats(statsRes);
+          }
+        } catch (err) {
+          console.error('주간 통계 조회 실패:', err);
+        }
+      })();
+    }
+  }, [tab, weekOffset]);
+
+  // 대시보드 탭 활성화 또는 주간/페이지 변경 시 postings 갱신
+  // 역할: 통계 + 테이블 데이터 로드 (탭/주간 변경 시 자동 페이지 리셋)
+  useEffect(() => {
+    if (tab === 'dashboard' && !loading) {
+      (async () => {
+        try {
+          setError(null);
+
+          // 탭이나 주간이 변경되었으면 페이지를 0으로 리셋
+          const hasTabChanged = prevTabRef.current !== tab;
+          const hasWeekOffsetChanged = prevWeekOffsetRef.current !== weekOffset;
+          const pageToUse = hasTabChanged || hasWeekOffsetChanged ? 0 : currentPage;
+
+          // 이전 값 업데이트
+          prevTabRef.current = tab;
+          prevWeekOffsetRef.current = weekOffset;
+
+          // 페이지 변경이 필요하면 상태 업데이트 (비동기)
+          if (pageToUse !== currentPage) {
+            setCurrentPage(pageToUse);
+          }
+
+          const referenceDate = new Date();
+          referenceDate.setDate(referenceDate.getDate() + weekOffset * 7);
+          const weekDatesForFetch = getWeekDates(referenceDate);
+          const startDateStr = formatDate(weekDatesForFetch[0]);
+
+          // 포스팅 데이터 조회
+          const postingsRes = await postingAPI.getWeekly(startDateStr, pageSize, pageToUse);
+
           if (postingsRes?.content) {
             const dailyPosts = convertWeeklyPostingsToDailyPosts(
               postingsRes.content,
               weekDatesForFetch[0]
             );
-            console.log('[탭 전환 변환 후]', dailyPosts);
             setPosts(dailyPosts);
+
+            const uniqueMembers = {};
+            postingsRes.content.forEach((posting) => {
+              if (!uniqueMembers[posting.memberNickname]) {
+                uniqueMembers[posting.memberNickname] = {
+                  id: posting.memberNickname,
+                  nickname: posting.memberNickname,
+                  name: posting.memberName || '',
+                  blogUrl: `https://blog.naver.com/${posting.memberNickname}`,
+                  avatar: posting.memberNickname?.substring(0, 2).toUpperCase() || 'N/A',
+                  categoryId: '',
+                  status: 'active',
+                };
+              }
+            });
+            setDashboardMembers(Object.values(uniqueMembers));
+
+            // totalPages 계산
+            const uniqueMemberCount = new Set(postingsRes.content.map((p) => p.memberNickname))
+              .size;
+            const calculatedTotalPages = Math.ceil(uniqueMemberCount / pageSize);
+            setTotalPages(calculatedTotalPages);
           }
-        } else if (tab === 'members') {
-          console.log('[탭 전환] 인원 관리 탭 - 멤버/카테고리 데이터 갱신');
+        } catch (err) {
+          console.error('포스팅 데이터 조회 실패:', err);
+          setError(err.message);
+        }
+      })();
+    }
+  }, [tab, weekOffset, pageSize, currentPage, loading]);
+
+  // 탭 전환 시 데이터 갱신
+  useEffect(() => {
+    (async () => {
+      try {
+        if (tab === 'members') {
           const [membersRes, categoriesRes] = await Promise.all([
-            memberAPI.getAll(),
+            memberAPI.getAll(0, 1000, 'active'),
             categoryAPI.getAll(),
           ]);
 
           const membersList = (membersRes?.content || []).map((m, idx) => ({
-            id: String(m.id),
+            id: m.nickname,
             nickname: m.nickname || `멤버${idx + 1}`,
             name: m.name || '',
             blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
             avatar: m.nickname?.substring(0, 2).toUpperCase() || 'N/A',
             categoryId: m.categoryCode || '',
+            status: m.status || 'active',
           }));
 
           const categoriesList = (categoriesRes?.content || []).map((c) => ({
             id: c.categoryCode || '',
             name: c.categoryName || '',
+            description: c.description || '',
           }));
 
           setMembers(membersList);
@@ -163,7 +233,7 @@ export function App() {
         console.error('탭 전환 시 데이터 갱신 실패:', err);
       }
     })();
-  }, [tab, weekOffset]);
+  }, [tab]);
 
   const today = new Date();
   const referenceDate = new Date();
@@ -178,29 +248,7 @@ export function App() {
 
   const getCount = (memberId, date) => {
     const entry = posts.find((p) => p.memberId === memberId && p.date === date);
-    const result = entry ? entry.count : 0;
-    if (posts.length > 0 && memberId === posts[0]?.memberId) {
-      console.log(
-        `[getCount] memberId=${memberId}, date=${date}, found=${!!entry}, count=${result}, posts=`,
-        posts
-      );
-    }
-    return result;
-  };
-
-  const handleSavePost = (memberId, date, count) => {
-    setPosts((prev) => {
-      const existing = prev.findIndex((p) => p.memberId === memberId && p.date === date);
-      if (existing !== -1) {
-        const updated = [...prev];
-        if (count === 0) updated.splice(existing, 1);
-        else updated[existing] = { ...updated[existing], count };
-        return updated;
-      }
-      if (count === 0) return prev;
-      return [...prev, { memberId, date, count }];
-    });
-    setPostModal(null);
+    return entry ? entry.count : 0;
   };
 
   // 멤버 추가
@@ -213,21 +261,84 @@ export function App() {
     }
   };
 
-  // 멤버 삭제
+  // 멤버 삭제 (soft delete)
   const handleRemoveMember = async (id) => {
     try {
       await memberAPI.delete(id);
+      setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, status: 'deleted' } : m)));
+    } catch (err) {
+      console.error('멤버 삭제 실패:', err);
+    }
+  };
+
+  // 멤버 정보 수정
+  const handleUpdateMember = async (id, updates) => {
+    try {
+      await memberAPI.update(id, updates.nickname, updates.categoryId);
+      setMembers((prev) =>
+        prev.map((m) =>
+          m.id === id
+            ? {
+                ...m,
+                nickname: updates.nickname,
+                name: updates.name,
+                categoryId: updates.categoryId,
+              }
+            : m
+        )
+      );
+    } catch (err) {
+      console.error('멤버 수정 실패:', err);
+    }
+  };
+
+  // 멤버 영구 삭제
+  const handlePermanentDeleteMember = async (id) => {
+    try {
+      await memberAPI.permanentDelete(id);
       setMembers((prev) => prev.filter((m) => m.id !== id));
       setPosts((prev) => prev.filter((p) => p.memberId !== id));
     } catch (err) {
-      console.error('멤버 삭제 실패:', err);
+      console.error('멤버 영구 삭제 실패:', err);
+    }
+  };
+
+  // 멤버 복원
+  const handleRestoreMember = async (nickname) => {
+    try {
+      await memberAPI.restore(nickname);
+      setMembers((prev) =>
+        prev.map((m) => (m.nickname === nickname ? { ...m, status: 'active' } : m))
+      );
+    } catch (err) {
+      console.error('멤버 복원 실패:', err);
+    }
+  };
+
+  // 배치 데이터 수집
+  const handleBatchExecute = async (startDate, endDate) => {
+    setBatchLoading(true);
+    try {
+      await postingAPI.executeBatch(startDate, endDate);
+      const postingsRes = await postingAPI.getWeekly(startDate, pageSize);
+      if (postingsRes?.content) {
+        const dailyPosts = convertWeeklyPostingsToDailyPosts(
+          postingsRes.content,
+          new Date(startDate)
+        );
+        setPosts(dailyPosts);
+      }
+    } catch (err) {
+      console.error('배치 실행 실패:', err);
+    } finally {
+      setBatchLoading(false);
     }
   };
 
   // 카테고리 추가
   const handleAddCategory = async (c) => {
     try {
-      await categoryAPI.create(c.id, c.name, c.color);
+      await categoryAPI.create(c.id, c.name, c.description);
       setCategories((prev) => [...prev, c]);
     } catch (err) {
       console.error('카테고리 추가 실패:', err);
@@ -248,22 +359,35 @@ export function App() {
   // 카테고리 수정
   const handleUpdateCategory = async (id, updates) => {
     try {
-      await categoryAPI.update(id, updates.name, updates.color);
+      await categoryAPI.update(id, updates.name, updates.description);
       setCategories((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, name: updates.name, color: updates.color } : c))
+        prev.map((c) =>
+          c.id === id ? { ...c, name: updates.name, description: updates.description } : c
+        )
       );
     } catch (err) {
       console.error('카테고리 수정 실패:', err);
     }
   };
 
-  const totalThisWeek = members.reduce((sum, m) => {
-    return sum + weekDates.reduce((s, d) => s + getCount(m.id, formatDate(d)), 0);
-  }, 0);
-
-  const activeMembers = members.filter((m) =>
-    weekDates.some((d) => getCount(m.id, formatDate(d)) > 0)
-  ).length;
+  // 멤버 필터 변경 (active/deleted)
+  const handleFilterChange = async (status) => {
+    try {
+      const membersRes = await memberAPI.getAll(0, 1000, status);
+      const membersList = (membersRes?.content || []).map((m, idx) => ({
+        id: m.nickname,
+        nickname: m.nickname || `멤버${idx + 1}`,
+        name: m.name || '',
+        blogUrl: `https://blog.naver.com/${m.nickname || 'unknown'}`,
+        avatar: m.nickname?.substring(0, 2).toUpperCase() || 'N/A',
+        categoryId: m.categoryCode || '',
+        status: m.status || 'active',
+      }));
+      setMembers(membersList);
+    } catch (err) {
+      console.error('멤버 필터 조회 실패:', err);
+    }
+  };
 
   if (loading) {
     return (
@@ -289,16 +413,14 @@ export function App() {
       {/* 헤더 */}
       <header className="app-header">
         <div className="app-header-content">
-          <div className="app-logo-section">
+          <button
+            className="app-logo-section"
+            onClick={() => setTab('dashboard')}
+            aria-label="홈으로 이동"
+          >
             <img src={logoImg} alt="AMAZON" className="app-logo" />
-            <div>
-              <div className="app-title-group">
-                <span className="app-title">AMAZON</span>
-                <span className="app-badge">NAVER BLOG GROUP</span>
-              </div>
-              <p className="app-subtitle">Amazing Amateurs · 블로그 포스팅 현황</p>
-            </div>
-          </div>
+            <span className="app-title">AMAZON</span>
+          </button>
 
           <nav className="app-tabs">
             <button
@@ -328,21 +450,21 @@ export function App() {
               <div className="stat-card">
                 <p className="stat-label">이번 주 총 포스팅</p>
                 <p className="stat-value">
-                  {totalThisWeek}
+                  {weeklyStats.totalPostingCount}
                   <span className="stat-unit">개</span>
                 </p>
               </div>
               <div className="stat-card">
                 <p className="stat-label">활동 인원</p>
                 <p className="stat-value">
-                  {activeMembers} / {members.length}
+                  {weeklyStats.activeMemberCount} / {weeklyStats.totalMemberCount}
                   <span className="stat-unit">명</span>
                 </p>
               </div>
               <div className="stat-card">
                 <p className="stat-label">1인 평균 포스팅</p>
                 <p className="stat-value">
-                  {members.length ? (totalThisWeek / members.length).toFixed(1) : '0'}
+                  {weeklyStats.averagePostingPerActiveMember.toFixed(2)}
                   <span className="stat-unit">개</span>
                 </p>
               </div>
@@ -377,7 +499,7 @@ export function App() {
             </div>
 
             <WeeklyDashboard
-              members={members}
+              members={dashboardMembers}
               categories={categories}
               weekDates={weekDates}
               daysKo={DAYS_KO}
@@ -385,23 +507,16 @@ export function App() {
               formatDate={formatDate}
               today={today}
               error={error}
-              onCellClick={(memberId, date) => setPostModal({ open: true, memberId, date })}
-              onBatchExecute={async (startDate, endDate) => {
-                try {
-                  console.log(`[배치 실행] startDate=${startDate}, endDate=${endDate}`);
-                  await postingAPI.executeBatch(startDate, endDate);
-                  const postingsRes = await postingAPI.getWeekly(startDate);
-                  if (postingsRes?.content) {
-                    const dailyPosts = convertWeeklyPostingsToDailyPosts(
-                      postingsRes.content,
-                      new Date(startDate)
-                    );
-                    setPosts(dailyPosts);
-                  }
-                } catch (err) {
-                  console.error('배치 실행 실패:', err);
-                }
+              weekOffset={weekOffset}
+              totalPages={totalPages}
+              batchLoading={batchLoading}
+              onPageSizeChange={setPageSize}
+              onPageChange={setCurrentPage}
+              onCellClick={(memberId, date) => {
+                const url = `https://blog.naver.com/PostList.naver?blogId=${memberId}&viewdate=${date}`;
+                window.open(url, '_blank');
               }}
+              onBatchExecute={handleBatchExecute}
             />
           </>
         )}
@@ -417,24 +532,17 @@ export function App() {
               formatDate={formatDate}
               onAddMember={(m) => handleAddMember(m)}
               onRemoveMember={(id) => handleRemoveMember(id)}
+              onUpdateMember={(id, updates) => handleUpdateMember(id, updates)}
               onAddCategory={(c) => handleAddCategory(c)}
               onRemoveCategory={(id) => handleRemoveCategory(id)}
               onUpdateCategory={(id, updates) => handleUpdateCategory(id, updates)}
+              onPermanentDeleteMember={(id) => handlePermanentDeleteMember(id)}
+              onRestoreMember={(nickname) => handleRestoreMember(nickname)}
+              onFilterChange={handleFilterChange}
             />
           </>
         )}
       </main>
-
-      {postModal && (
-        <PostModal
-          members={members}
-          memberId={postModal.memberId}
-          date={postModal.date}
-          currentCount={getCount(postModal.memberId, postModal.date)}
-          onSave={handleSavePost}
-          onClose={() => setPostModal(null)}
-        />
-      )}
     </div>
   );
 }
