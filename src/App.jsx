@@ -527,9 +527,6 @@ export function App() {
               error={error}
               members={members}
               categories={categories}
-              weekDates={weekDates}
-              getCount={getCount}
-              formatDate={formatDate}
               onAddMember={(m) => handleAddMember(m)}
               onRemoveMember={(id) => handleRemoveMember(id)}
               onUpdateMember={(id, updates) => handleUpdateMember(id, updates)}
