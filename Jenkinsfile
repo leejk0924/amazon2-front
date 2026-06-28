@@ -52,7 +52,10 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'npm ci'
+        sh '''
+          npm cache clean --force
+          npm install
+        '''
       }
     }
 
