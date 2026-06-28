@@ -48,7 +48,7 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'npm config set cache /tmp/npm-cache && npm ci'
+        sh 'NPM_CONFIG_CACHE=/tmp/npm-cache npm ci'
       }
     }
 
