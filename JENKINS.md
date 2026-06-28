@@ -7,7 +7,7 @@
 ## 파이프라인 단계
 
 ```
-Checkout → Install → Lint → Type Check → Test → Build → Build Docker → Test Docker
+Checkout → Install → Lint → Type Check → Test → Build → Build Docker → Test Docker → Push to Registry
 ```
 
 각 단계별 역할:
@@ -22,6 +22,7 @@ Checkout → Install → Lint → Type Check → Test → Build → Build Docker
 | **Build**                | Vite로 프로젝트 빌드         | 빌드 중단   |
 | **Build Docker Image**   | Docker 이미지 빌드           | 빌드 중단   |
 | **Test Docker Image**    | 빌드된 이미지 실행 및 검증   | 빌드 중단   |
+| **Push to Registry**     | Private Registry에 푸시      | 빌드 중단   |
 
 ## 사전 요구사항
 
@@ -121,6 +122,18 @@ Jenkins 메인 페이지 → `Manage Jenkins` → `Manage Plugins`
 
 ## 3단계: Jenkins 크리덴셜 설정
 
+### Private Registry URL 설정
+
+```bash
+# 1. Jenkins 대시보드 → Manage Jenkins → Manage Credentials
+# 2. Stores scoped to Jenkins → Jenkins → Global credentials
+# 3. Add Credentials
+# 4. Kind: Secret text
+#   - Secret: 192.168.1.100:5000 (Registry 서버 IP:포트)
+#   - ID: registry-url
+# 5. Create
+```
+
 ### Docker Hub 크리덴셜 (선택사항)
 
 나중에 Docker Hub에 이미지를 푸시하려면:
@@ -194,7 +207,32 @@ docker images | grep amazon2-front
 # amazon2-front   latest  50.5MB
 ```
 
-## 6단계: 배포 설정 (선택사항)
+## 6단계: Private Registry 설정
+
+자세한 가이드는 [PRIVATE_REGISTRY.md](./PRIVATE_REGISTRY.md) 참고
+
+### 빠른 설정
+
+```bash
+# Registry 서버에서 실행
+docker-compose -f docker-compose.yml up -d
+
+# Registry URL 확인
+curl http://localhost:5000/v2/
+```
+
+### Jenkins에 Registry URL 추가
+
+1. Jenkins 대시보드 → Manage Jenkins → Manage Credentials
+2. Global credentials → Add Credentials
+3. Kind: **Secret text**
+   - Secret: `192.168.1.100:5000` (또는 Registry 주소)
+   - ID: `registry-url`
+4. Create
+
+**결과**: Jenkins가 자동으로 이미지를 Registry에 푸시합니다.
+
+## 7단계: 배포 설정 (선택사항)
 
 ### 로컬 서버에 배포
 

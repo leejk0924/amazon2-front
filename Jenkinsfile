@@ -3,8 +3,10 @@ pipeline {
 
   environment {
     PROJECT_NAME = 'amazon2-front'
-    DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
-    DOCKER_IMAGE_LATEST = "${PROJECT_NAME}:latest"
+    // Private Registry 설정 (환경변수로 변경 가능)
+    REGISTRY_URL = credentials('registry-url') ?: 'localhost:5000'
+    DOCKER_IMAGE = "${REGISTRY_URL}/${PROJECT_NAME}:${BUILD_NUMBER}"
+    DOCKER_IMAGE_LATEST = "${REGISTRY_URL}/${PROJECT_NAME}:latest"
     NODE_ENV = 'production'
   }
 
@@ -110,6 +112,17 @@ pipeline {
         '''
       }
     }
+
+    stage('Push to Private Registry') {
+      steps {
+        echo '📤 Private Registry에 이미지 푸시 중...'
+        sh '''
+          echo "Registry: ${REGISTRY_URL}"
+          docker push ${DOCKER_IMAGE}
+          docker push ${DOCKER_IMAGE_LATEST}
+        '''
+      }
+    }
   }
 
   post {
@@ -122,8 +135,9 @@ pipeline {
     }
 
     success {
-      echo '✅ 빌드 성공!'
-      echo "📦 Docker 이미지: ${DOCKER_IMAGE_LATEST}"
+      echo '✅ 빌드 및 푸시 성공!'
+      echo "📦 이미지: ${DOCKER_IMAGE_LATEST}"
+      echo "🔗 Registry: ${REGISTRY_URL}"
       echo "🚀 배포 준비 완료"
     }
 
