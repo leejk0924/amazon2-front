@@ -8,9 +8,9 @@ pipeline {
 
   parameters {
     string(
-      name: 'BACKEND_API_URL',
-      defaultValue: 'http://localhost:8080',
-      description: 'Backend API 주소 (예: http://localhost:8080 또는 https://api.example.com)'
+      name: 'VITE_API_BASE_URL',
+      defaultValue: '/api',
+      description: 'API 엔드포인트 (기본값: /api - nginx 리버스 프록시 사용)'
     )
     string(
       name: 'DOCKER_PORT',
@@ -24,7 +24,7 @@ pipeline {
     DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
     DOCKER_IMAGE_LATEST = "${PROJECT_NAME}:latest"
     NODE_ENV = 'production'
-    VITE_API_BASE_URL = "${params.BACKEND_API_URL}"
+    VITE_API_BASE_URL = "${params.VITE_API_BASE_URL}"
     DOCKER_PORT = "${params.DOCKER_PORT}"
   }
 
@@ -82,7 +82,7 @@ pipeline {
     stage('Build') {
       steps {
         echo '🔨 프로젝트 빌드 중...'
-        echo "Backend API URL: ${VITE_API_BASE_URL}"
+        echo "API 엔드포인트: ${VITE_API_BASE_URL}"
         sh '''
           npm run build
         '''
@@ -172,7 +172,7 @@ pipeline {
       echo '✅ 빌드 및 배포 성공!'
       echo "📦 이미지: ${DOCKER_IMAGE_LATEST}"
       echo "🌐 접속: http://localhost:${DOCKER_PORT}"
-      echo "🔗 Backend API: ${VITE_API_BASE_URL}"
+      echo "🔗 API 엔드포인트: ${VITE_API_BASE_URL}"
     }
 
     unstable {
