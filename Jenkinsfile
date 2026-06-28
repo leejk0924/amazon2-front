@@ -48,9 +48,9 @@ pipeline {
       steps {
         echo '🧪 Docker 이미지 테스트 중...'
         sh """
-          docker run -d --name test-${BUILD_NUMBER} -p 8080:80 ${DOCKER_IMAGE}
-          sleep 3
-          curl -f http://localhost:8080/index.html || {
+          docker run -d --name test-${BUILD_NUMBER} ${DOCKER_IMAGE}
+          sleep 2
+          docker exec test-${BUILD_NUMBER} wget -q -O - http://localhost/index.html > /dev/null || {
             docker logs test-${BUILD_NUMBER}
             docker rm -f test-${BUILD_NUMBER}
             exit 1
