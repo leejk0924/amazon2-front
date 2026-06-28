@@ -1,5 +1,23 @@
 pipeline {
-  agent any
+  agent {
+    docker {
+      image 'node:20-alpine'
+      args '-v /var/run/docker.sock:/var/run/docker.sock'
+    }
+  }
+
+  parameters {
+    string(
+      name: 'BACKEND_API_URL',
+      defaultValue: 'http://localhost:8080',
+      description: 'Backend API 주소 (예: http://localhost:8080 또는 https://api.example.com)'
+    )
+    string(
+      name: 'DOCKER_PORT',
+      defaultValue: '7777',
+      description: '외부 포트 (기본값: 7777)'
+    )
+  }
 
   parameters {
     string(
