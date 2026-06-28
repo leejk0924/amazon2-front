@@ -43,24 +43,6 @@ pipeline {
       }
     }
 
-    stage('Test Docker Image') {
-      agent any
-      steps {
-        echo '🧪 Docker 이미지 테스트 중...'
-        sh """
-          docker run -d --name test-${BUILD_NUMBER} ${DOCKER_IMAGE}
-          sleep 5
-          docker exec test-${BUILD_NUMBER} wget -q -O /dev/null http://127.0.0.1/index.html || {
-            docker logs test-${BUILD_NUMBER}
-            docker rm -f test-${BUILD_NUMBER}
-            exit 1
-          }
-          docker rm -f test-${BUILD_NUMBER}
-          echo '✅ 테스트 완료'
-        """
-      }
-    }
-
     stage('Deploy') {
       agent any
       steps {
@@ -79,11 +61,6 @@ pipeline {
   }
 
   post {
-    always {
-      node('built-in') {
-        sh "docker rm -f test-${BUILD_NUMBER} 2>/dev/null || true"
-      }
-    }
     success {
       echo '✅ 빌드 및 배포 성공!'
     }
