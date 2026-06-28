@@ -44,7 +44,11 @@ pipeline {
       }
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'npm install --ignore-scripts'
+        sh '''
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+          npm install --ignore-scripts
+        '''
 
         echo '🔨 빌드 중...'
         sh "VITE_API_BASE_URL=${VITE_API_BASE_URL} npm run build"
