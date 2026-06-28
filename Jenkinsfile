@@ -1,12 +1,26 @@
 pipeline {
   agent any
 
+  parameters {
+    string(
+      name: 'BACKEND_API_URL',
+      defaultValue: 'http://localhost:8080',
+      description: 'Backend API 주소 (예: http://localhost:8080 또는 https://api.example.com)'
+    )
+    string(
+      name: 'DOCKER_PORT',
+      defaultValue: '7777',
+      description: '외부 포트 (기본값: 7777)'
+    )
+  }
+
   environment {
     PROJECT_NAME = 'amazon2-front'
     DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
     DOCKER_IMAGE_LATEST = "${PROJECT_NAME}:latest"
-    DOCKER_PORT = '7777'
     NODE_ENV = 'production'
+    VITE_API_BASE_URL = "${params.BACKEND_API_URL}"
+    DOCKER_PORT = "${params.DOCKER_PORT}"
   }
 
   options {
@@ -63,7 +77,10 @@ pipeline {
     stage('Build') {
       steps {
         echo '🔨 프로젝트 빌드 중...'
-        sh 'npm run build'
+        echo "Backend API URL: ${VITE_API_BASE_URL}"
+        sh '''
+          npm run build
+        '''
       }
     }
 
@@ -115,6 +132,7 @@ pipeline {
     stage('Deploy') {
       steps {
         echo '🚀 컨테이너 배포 중...'
+        echo "포트: ${DOCKER_PORT}"
         sh '''
           # 기존 컨테이너 중지
           docker stop ${PROJECT_NAME} || true
@@ -149,6 +167,7 @@ pipeline {
       echo '✅ 빌드 및 배포 성공!'
       echo "📦 이미지: ${DOCKER_IMAGE_LATEST}"
       echo "🌐 접속: http://localhost:${DOCKER_PORT}"
+      echo "🔗 Backend API: ${VITE_API_BASE_URL}"
     }
 
     unstable {

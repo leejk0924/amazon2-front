@@ -43,37 +43,34 @@ Deploy (docker run)
 # - Save
 ```
 
-### 2단계: GitHub Webhook 설정
+### 2단계: 파라미터 설정 완료
 
-GitHub → Repository Settings → Webhooks → Add webhook
+Jenkinsfile에 이미 파라미터가 정의되어 있습니다:
 
-```
-- Payload URL: http://<jenkins-url>/github-webhook/
-- Content type: application/json
-- Events: Push events + Pull requests
-- Active: 체크
-```
+- `BACKEND_API_URL`: Backend API 주소
+- `DOCKER_PORT`: 외부 포트
 
-### 3단계: Jenkins 빌드 트리거 설정
-
-Jenkins 파이프라인 → Configure → Build Triggers
-
-```
-- GitHub hook trigger for GITscm polling 체크
-- Save
-```
+별도의 Webhook 설정이 필요 없습니다.
 
 ## 배포 확인
 
-### 자동 배포 시작
+### 수동 배포 시작
 
 ```bash
-# GitHub에 코드 푸시
-git push origin main
-
-# Jenkins가 자동으로 빌드 및 배포 시작
-# Jenkins 대시보드에서 빌드 진행 상황 확인
+# 1. Jenkins 대시보드 → amazon2-front
+# 2. "Build with Parameters" 클릭
+# 3. 파라미터 입력:
+#    - BACKEND_API_URL: http://localhost:8080 (또는 실제 Backend 주소)
+#    - DOCKER_PORT: 7777 (외부 포트)
+# 4. Build 클릭
 ```
+
+### 파라미터 설명
+
+| 파라미터            | 기본값                | 설명                  |
+| ------------------- | --------------------- | --------------------- |
+| **BACKEND_API_URL** | http://localhost:8080 | Backend API 서버 주소 |
+| **DOCKER_PORT**     | 7777                  | 외부에서 접속할 포트  |
 
 ### 웹 접속
 
