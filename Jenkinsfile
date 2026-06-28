@@ -53,6 +53,7 @@ pipeline {
           docker run -d \\
             --name ${PROJECT_NAME} \\
             -p ${DOCKER_PORT}:80 \\
+            --add-host=host.docker.internal:host-gateway \\
             --restart unless-stopped \\
             ${DOCKER_IMAGE_LATEST}
         """
