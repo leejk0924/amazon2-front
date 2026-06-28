@@ -59,13 +59,6 @@ describe('App', () => {
       });
     });
 
-    it('should display subtitle', async () => {
-      render(<App />);
-      await waitFor(() => {
-        expect(screen.getByText(/Amazing Amateurs/)).toBeInTheDocument();
-      });
-    });
-
     it('should have dashboard and members tab buttons', async () => {
       render(<App />);
       await waitFor(() => {

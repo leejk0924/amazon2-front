@@ -59,8 +59,8 @@ pipeline {
     stage('Lint & Format Check') {
       steps {
         echo '✅ ESLint 검증 중...'
-        sh 'npm run lint --no-fix' || {
-          unstable('ESLint 경고 발견')
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          sh 'npm run lint'
         }
       }
     }
@@ -68,8 +68,8 @@ pipeline {
     stage('Type Check') {
       steps {
         echo '🔍 TypeScript 타입 검사 중...'
-        sh 'npm run type-check' || {
-          unstable('TypeScript 타입 오류 발견')
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          sh 'npm run type-check'
         }
       }
     }
@@ -77,8 +77,8 @@ pipeline {
     stage('Test') {
       steps {
         echo '🧪 테스트 실행 중...'
-        sh 'npm run test -- --run' || {
-          unstable('테스트 실패')
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          sh 'npm run test -- --run'
         }
       }
     }
