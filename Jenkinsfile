@@ -19,19 +19,6 @@ pipeline {
     )
   }
 
-  parameters {
-    string(
-      name: 'BACKEND_API_URL',
-      defaultValue: 'http://localhost:8080',
-      description: 'Backend API 주소 (예: http://localhost:8080 또는 https://api.example.com)'
-    )
-    string(
-      name: 'DOCKER_PORT',
-      defaultValue: '7777',
-      description: '외부 포트 (기본값: 7777)'
-    )
-  }
-
   environment {
     PROJECT_NAME = 'amazon2-front'
     DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
