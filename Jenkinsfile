@@ -52,7 +52,7 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'npm ci --ignore-scripts'
+        sh 'npm ci'
       }
     }
 
