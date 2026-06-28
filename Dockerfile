@@ -6,8 +6,9 @@ WORKDIR /app
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# 의존성 설치 (devDependencies 포함)
-RUN npm ci --include=dev --ignore-scripts
+# 의존성 설치 (현재 플랫폼 기준으로 native binding 해결)
+ENV HUSKY=0
+RUN npm install
 
 # 소스 코드 복사
 COPY . .
