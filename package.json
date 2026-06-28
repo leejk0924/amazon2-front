@@ -13,7 +13,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "prepare": "husky",
+    "prepare": "husky || true",
     "errors:analyze": "node scripts/analyze-errors.js",
     "errors:view": "cat ./.claude/errors/analysis/*.json | jq .",
     "errors:clear": "rm -rf ./.claude/errors/logs/*"

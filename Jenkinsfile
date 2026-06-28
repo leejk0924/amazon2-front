@@ -26,6 +26,10 @@ pipeline {
     NODE_ENV = 'production'
     VITE_API_BASE_URL = "${params.VITE_API_BASE_URL}"
     DOCKER_PORT = "${params.DOCKER_PORT}"
+    HOME = '/tmp'
+    npm_config_cache = '/tmp/npm-cache'
+    HUSKY = '0'
+    npm_config_ignore_scripts = 'true'
   }
 
   options {
@@ -48,7 +52,7 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'HUSKY=0 NPM_CONFIG_CACHE=/tmp/npm-cache npm ci'
+        sh 'npm ci --ignore-scripts'
       }
     }
 
