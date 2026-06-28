@@ -53,6 +53,7 @@ pipeline {
       steps {
         echo '📥 의존성 설치 중...'
         sh '''
+          rm -rf node_modules package-lock.json
           npm cache clean --force
           npm install
         '''
