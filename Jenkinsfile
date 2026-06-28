@@ -1,10 +1,5 @@
 pipeline {
-  agent {
-    docker {
-      image 'node:20-alpine'
-      args '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
-  }
+  agent none
 
   parameters {
     string(
@@ -26,78 +21,65 @@ pipeline {
     NODE_ENV = 'production'
     VITE_API_BASE_URL = "${params.VITE_API_BASE_URL}"
     DOCKER_PORT = "${params.DOCKER_PORT}"
-    HOME = '/tmp'
-    npm_config_cache = '/tmp/npm-cache'
-    HUSKY = '0'
-    npm_config_ignore_scripts = 'true'
   }
 
   options {
-    // 빌드 로그 보관 기간 설정
     buildDiscarder(logRotator(numToKeepStr: '30', daysToKeepStr: '10'))
-    // 동시 빌드 방지
     disableConcurrentBuilds()
-    // 빌드 타임아웃 설정 (30분)
     timeout(time: 30, unit: 'MINUTES')
   }
 
   stages {
     stage('Checkout') {
+      agent any
       steps {
         echo '📦 Git 저장소 체크아웃 중...'
         checkout scm
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Install & Build') {
+      agent {
+        docker {
+          image 'node:20-alpine'
+        }
+      }
+      environment {
+        HOME = '/tmp'
+        npm_config_cache = '/tmp/npm-cache'
+        HUSKY = '0'
+      }
       steps {
         echo '📥 의존성 설치 중...'
         sh '''
           rm -rf node_modules package-lock.json
           npm cache clean --force
-          npm install
+          npm ci --ignore-scripts
         '''
-      }
-    }
 
-    stage('Lint & Format Check') {
-      steps {
         echo '✅ ESLint 검증 중...'
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
           sh 'npm run lint'
         }
-      }
-    }
 
-    stage('Type Check') {
-      steps {
         echo '🔍 TypeScript 타입 검사 중...'
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
           sh 'npm run type-check'
         }
-      }
-    }
 
-    stage('Test') {
-      steps {
         echo '🧪 테스트 실행 중...'
         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
           sh 'npm run test -- --run'
         }
-      }
-    }
 
-    stage('Build') {
-      steps {
         echo '🔨 프로젝트 빌드 중...'
         echo "API 엔드포인트: ${VITE_API_BASE_URL}"
-        sh '''
-          npm run build
-        '''
+        sh 'npm run build'
       }
     }
 
     stage('Build Docker Image') {
+      agent any
       steps {
         echo '🐳 Docker 이미지 빌드 중...'
         sh '''
@@ -112,6 +94,7 @@ pipeline {
     }
 
     stage('Test Docker Image') {
+      agent any
       steps {
         echo '🧪 Docker 이미지 테스트 중...'
         sh '''
@@ -143,6 +126,7 @@ pipeline {
     }
 
     stage('Deploy') {
+      agent any
       steps {
         echo '🚀 컨테이너 배포 중...'
         echo "포트: ${DOCKER_PORT}"
@@ -171,7 +155,6 @@ pipeline {
     always {
       echo '🧹 정리 중...'
       sh '''
-        # 테스트 컨테이너 정리
         docker rm -f test-${BUILD_NUMBER} 2>/dev/null || true
       '''
     }
