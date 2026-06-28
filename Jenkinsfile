@@ -48,7 +48,7 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         echo '📥 의존성 설치 중...'
-        sh 'NPM_CONFIG_CACHE=/tmp/npm-cache npm ci'
+        sh 'HUSKY=0 NPM_CONFIG_CACHE=/tmp/npm-cache npm ci'
       }
     }
 
