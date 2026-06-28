@@ -1,27 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import '../styles/EditMemberModal.css';
 
-export function EditMemberModal({
-  isOpen,
-  member,
-  categories = [],
-  onClose,
-  onSave,
-}) {
+export function EditMemberModal({ isOpen, member, categories = [], onClose, onSave }) {
   const [mNickname, setMNickname] = useState('');
   const [mName, setMName] = useState('');
   const [mCategoryId, setMCategoryId] = useState('');
   const [categoryError, setCategoryError] = useState(false);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    if (isOpen && member) {
-      setMNickname(member.nickname || '');
-      setMName(member.name || '');
-      setMCategoryId(member.categoryId ? String(member.categoryId) : '');
-      setCategoryError(false);
-    }
-  }, [isOpen, member]);
 
   if (!isOpen) return null;
 
@@ -50,7 +34,7 @@ export function EditMemberModal({
   return (
     <>
       <div className="modal-overlay" onClick={handleClose} />
-      <div className="modal-popup">
+      <div className="modal-popup" key={`${isOpen}-${member?.id}`}>
         <div className="modal-header">
           <h2>멤버 정보 수정</h2>
           <button className="modal-close" onClick={handleClose}>
@@ -96,9 +80,7 @@ export function EditMemberModal({
                 </option>
               ))}
             </select>
-            {categoryError && (
-              <p className="error-message">카테고리를 선택해주세요</p>
-            )}
+            {categoryError && <p className="error-message">카테고리를 선택해주세요</p>}
           </div>
         </div>
 

@@ -1,24 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import '../styles/EditCategoryModal.css';
 
-export function EditCategoryModal({
-  isOpen,
-  category,
-  onClose,
-  onSave,
-}) {
+export function EditCategoryModal({ isOpen, category, onClose, onSave }) {
   const [cCode, setCCode] = useState('');
   const [cName, setCName] = useState('');
   const [cDesc, setCDesc] = useState('');
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => {
-    if (category && isOpen) {
-      setCCode(category.id || '');
-      setCName(category.name || '');
-      setCDesc(category.description || '');
-    }
-  }, [category, isOpen]);
 
   if (!isOpen) return null;
 
@@ -41,7 +27,7 @@ export function EditCategoryModal({
   return (
     <>
       <div className="modal-overlay" onClick={handleClose} />
-      <div className="modal-popup">
+      <div className="modal-popup" key={`${isOpen}-${category?.id}`}>
         <div className="modal-header">
           <h2>카테고리 수정</h2>
           <button className="modal-close" onClick={handleClose}>
@@ -52,12 +38,7 @@ export function EditCategoryModal({
         <div className="modal-body">
           <div className="form-group">
             <label>코드</label>
-            <input
-              type="text"
-              value={cCode}
-              disabled
-              placeholder="코드"
-            />
+            <input type="text" value={cCode} disabled placeholder="코드" />
           </div>
 
           <div className="form-group">

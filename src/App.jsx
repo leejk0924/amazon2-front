@@ -110,7 +110,7 @@ export function App() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [pageSize]);
 
   // 주간 통계 조회
   useEffect(() => {

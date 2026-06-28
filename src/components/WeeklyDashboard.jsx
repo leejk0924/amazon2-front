@@ -57,12 +57,16 @@ export function WeeklyDashboard({
   const [filterMax, setFilterMax] = useState(5);
   const [filterInput, setFilterInput] = useState('5');
 
-  // weekOffset 변경 시 page 리셋
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // weekOffset 변경 시 외부 콜백 호출
   useEffect(() => {
-    setPage(1);
     onPageChange(0);
   }, [weekOffset, onPageChange]);
+
+  // weekOffset 변경 시 내부 상태 업데이트
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+  }, [weekOffset]);
 
   // 주간 합계
   const weeklyTotal = (memberId) =>
