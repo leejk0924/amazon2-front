@@ -3,10 +3,9 @@ pipeline {
 
   environment {
     PROJECT_NAME = 'amazon2-front'
-    // Private Registry 설정 (환경변수로 변경 가능)
-    REGISTRY_URL = credentials('registry-url') ?: 'localhost:5000'
-    DOCKER_IMAGE = "${REGISTRY_URL}/${PROJECT_NAME}:${BUILD_NUMBER}"
-    DOCKER_IMAGE_LATEST = "${REGISTRY_URL}/${PROJECT_NAME}:latest"
+    DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
+    DOCKER_IMAGE_LATEST = "${PROJECT_NAME}:latest"
+    DOCKER_PORT = '7777'
     NODE_ENV = 'production'
   }
 
@@ -113,13 +112,25 @@ pipeline {
       }
     }
 
-    stage('Push to Private Registry') {
+    stage('Deploy') {
       steps {
-        echo '📤 Private Registry에 이미지 푸시 중...'
+        echo '🚀 컨테이너 배포 중...'
         sh '''
-          echo "Registry: ${REGISTRY_URL}"
-          docker push ${DOCKER_IMAGE}
-          docker push ${DOCKER_IMAGE_LATEST}
+          # 기존 컨테이너 중지
+          docker stop ${PROJECT_NAME} || true
+          docker rm ${PROJECT_NAME} || true
+
+          # 새 컨테이너 실행
+          docker run -d \
+            --name ${PROJECT_NAME} \
+            -p ${DOCKER_PORT}:80 \
+            -e NODE_ENV=${NODE_ENV} \
+            --restart unless-stopped \
+            ${DOCKER_IMAGE_LATEST}
+
+          echo "✅ 컨테이너 실행 완료"
+          sleep 2
+          docker ps | grep ${PROJECT_NAME}
         '''
       }
     }
@@ -135,10 +146,9 @@ pipeline {
     }
 
     success {
-      echo '✅ 빌드 및 푸시 성공!'
+      echo '✅ 빌드 및 배포 성공!'
       echo "📦 이미지: ${DOCKER_IMAGE_LATEST}"
-      echo "🔗 Registry: ${REGISTRY_URL}"
-      echo "🚀 배포 준비 완료"
+      echo "🌐 접속: http://localhost:${DOCKER_PORT}"
     }
 
     unstable {

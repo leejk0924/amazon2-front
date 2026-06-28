@@ -7,7 +7,7 @@
 ## 파이프라인 단계
 
 ```
-Checkout → Install → Lint → Type Check → Test → Build → Build Docker → Test Docker → Push to Registry
+Checkout → Install → Lint → Type Check → Test → Build → Build Docker → Test Docker → Deploy
 ```
 
 각 단계별 역할:
@@ -22,7 +22,7 @@ Checkout → Install → Lint → Type Check → Test → Build → Build Docker
 | **Build**                | Vite로 프로젝트 빌드         | 빌드 중단   |
 | **Build Docker Image**   | Docker 이미지 빌드           | 빌드 중단   |
 | **Test Docker Image**    | 빌드된 이미지 실행 및 검증   | 빌드 중단   |
-| **Push to Registry**     | Private Registry에 푸시      | 빌드 중단   |
+| **Deploy**               | Docker 컨테이너 실행 (7777)  | 빌드 중단   |
 
 ## 사전 요구사항
 
@@ -207,72 +207,32 @@ docker images | grep amazon2-front
 # amazon2-front   latest  50.5MB
 ```
 
-## 6단계: Private Registry 설정
+## 6단계: 배포 확인
 
-자세한 가이드는 [PRIVATE_REGISTRY.md](./PRIVATE_REGISTRY.md) 참고
+### 자동 배포 확인
 
-### 빠른 설정
+Jenkins 빌드 완료 후:
 
 ```bash
-# Registry 서버에서 실행
-docker-compose -f docker-compose.yml up -d
+# 1. 실행 중인 컨테이너 확인
+docker ps | grep amazon2-front
 
-# Registry URL 확인
-curl http://localhost:5000/v2/
+# 2. 웹 접속
+http://localhost:7777
+
+# 3. 로그 확인
+docker logs -f amazon2-front
 ```
 
-### Jenkins에 Registry URL 추가
+### 빌드 성공 메시지
 
-1. Jenkins 대시보드 → Manage Jenkins → Manage Credentials
-2. Global credentials → Add Credentials
-3. Kind: **Secret text**
-   - Secret: `192.168.1.100:5000` (또는 Registry 주소)
-   - ID: `registry-url`
-4. Create
-
-**결과**: Jenkins가 자동으로 이미지를 Registry에 푸시합니다.
-
-## 7단계: 배포 설정 (선택사항)
-
-### 로컬 서버에 배포
-
-Jenkinsfile을 수정하여 Docker 컨테이너를 자동으로 실행:
-
-```groovy
-stage('Deploy') {
-  steps {
-    sh '''
-      docker stop amazon2-front || true
-      docker rm amazon2-front || true
-      docker run -d \
-        --name amazon2-front \
-        -p 7777:80 \
-        amazon2-front:latest
-    '''
-  }
-}
+```
+✅ 빌드 및 배포 성공!
+📦 이미지: amazon2-front:latest
+🌐 접속: http://localhost:7777
 ```
 
-### 원격 서버에 배포
-
-SSH를 사용하여 원격 서버에 배포:
-
-```groovy
-stage('Deploy to Production') {
-  steps {
-    sh '''
-      ssh -i /path/to/key user@server.com "
-        docker pull amazon2-front:latest && \
-        docker stop amazon2-front || true && \
-        docker rm amazon2-front || true && \
-        docker run -d -p 7777:80 amazon2-front:latest
-      "
-    '''
-  }
-}
-```
-
-## 문제 해결
+## 7단계: 트러블슈팅
 
 ### 1. Docker 권한 오류
 
