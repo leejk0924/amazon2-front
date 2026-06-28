@@ -6,9 +6,9 @@ WORKDIR /app
 # package.json과 package-lock.json 복사
 COPY package*.json ./
 
-# 의존성 설치 (현재 플랫폼 기준으로 native binding 해결)
+# package-lock.json 삭제 후 설치 (플랫폼별 native binding 재해결)
 ENV HUSKY=0
-RUN npm install
+RUN rm -f package-lock.json && npm install
 
 # 소스 코드 복사
 COPY . .
