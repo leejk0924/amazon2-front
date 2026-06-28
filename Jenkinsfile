@@ -10,7 +10,6 @@ pipeline {
     PROJECT_NAME = 'amazon2-front'
     DOCKER_IMAGE = "${PROJECT_NAME}:${BUILD_NUMBER}"
     DOCKER_IMAGE_LATEST = "${PROJECT_NAME}:latest"
-    NODE_ENV = 'production'
     VITE_API_BASE_URL = "${params.VITE_API_BASE_URL}"
     DOCKER_PORT = "${params.DOCKER_PORT}"
   }
@@ -33,7 +32,7 @@ pipeline {
     stage('Install & Build') {
       agent {
         docker {
-          image 'node:20-alpine'
+          image 'node:22-alpine'
           reuseNode true
         }
       }
@@ -43,15 +42,28 @@ pipeline {
         HUSKY = '0'
       }
       steps {
+        echo '📥 Node/npm 버전 확인 중...'
+        sh '''
+          node -v
+          npm -v
+          echo "NODE_ENV=${NODE_ENV:-unset}"
+          npm config get omit
+        '''
+
         echo '📥 의존성 설치 중...'
         sh '''
-          rm -rf node_modules package-lock.json
-          npm cache clean --force
-          npm install --ignore-scripts
+          rm -rf node_modules
+          npm ci --include=dev --ignore-scripts
+        '''
+
+        echo '📦 설치 확인 중...'
+        sh '''
+          npm ls vite || true
+          ls -la node_modules/.bin/vite || true
         '''
 
         echo '🔨 빌드 중...'
-        sh "VITE_API_BASE_URL=${VITE_API_BASE_URL} npm run build"
+        sh "NODE_ENV=production VITE_API_BASE_URL=${VITE_API_BASE_URL} npm run build"
       }
     }
 
